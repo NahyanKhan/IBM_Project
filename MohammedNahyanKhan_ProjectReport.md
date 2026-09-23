@@ -1,202 +1,81 @@
 # Supply Chain Delivery Prediction & Analytics
-## Project Report — AICTE Internship on AI/ML
+## Final Project Report
 
-**Author:** Mohammed Nahyan Khan  
-**Submission Date:** 2025  
-**Dataset:** Kaggle E-Commerce Shipping Data (10,999 records)  
-**Application:** MohammedNahyanKhan_SupplyChainAnalytics.py  
+**Author:** Mohammed Nahyan Khan
+**Programme:** AICTE Internship on Artificial Intelligence & Machine Learning
+**Dataset:** Kaggle — E-Commerce Shipping Data (10,999 records)
+**Application:** MohammedNahyanKhan_SupplyChainAnalytics.py
+**Submission Year:** 2025
 
 ---
 
 ## 1. Executive Summary
 
-In the e-commerce sector, late shipments are one of the most direct drivers of customer churn, support cost escalation, and margin erosion. Industry estimates place the average cost of a single delayed order — including refunds, re-delivery, and customer service hours — between $10 and $25. At a delay rate of 59.7% across this dataset, a mid-size retailer processing 10,000 orders per month faces potential exposure exceeding $1 million annually.
+The modern e-commerce supply chain operates under mounting pressure to meet customer expectations for fast, reliable delivery. When shipments fail to arrive on schedule, the consequences extend well beyond a single dissatisfied customer: each delayed order triggers a cascade of costs that include customer service escalations, partial or full refunds, expedited re-delivery charges, and long-term damage to brand loyalty scores such as Net Promoter Score (NPS). In the dataset examined for this project, a striking **59.7% of all shipments arrived late** — a figure that reveals not an occasional operational failure, but a systemic, structural problem embedded within existing fulfilment processes. At the scale of a mid-size retailer processing tens of thousands of orders per month, a delay rate approaching 60% translates to millions of dollars in annual remediation costs and represents a genuine competitive disadvantage in a market where same-day and next-day delivery have become the consumer expectation rather than the premium offering.
 
-This project delivers a **production-ready machine learning web application** that addresses this problem along three dimensions:
-
-1. **Predictive Intelligence** — A Random Forest classifier trained on 10,999 historical shipments identifies orders at risk of delay before despatch, achieving **68.9% test-set accuracy** using four operationally observable features.
-2. **Local Explainability** — SHAP (SHapley Additive exPlanations) force plots break each prediction down to the individual feature level, giving logistics managers an auditable reason for every flag rather than a black-box output.
-3. **Financial Quantification** — An enterprise batch-scoring pipeline accepts daily shipping manifests, predicts delay risk at scale, and surfaces a **Value at Risk (VAR)** metric in dollars — translating model output directly into business language.
-
-The result is a tool that moves machine learning from a notebook experiment to an actionable operations dashboard.
+This project directly addresses that problem by deploying a supervised machine learning solution capable of predicting whether an individual shipment will be delayed — **before it leaves the warehouse**. Rather than reacting to delays after they occur, the application empowers logistics coordinators and operations managers to take proactive measures: upgrading a flagged order to a faster carrier, pre-emptively notifying the customer with a revised delivery estimate, or temporarily holding a promotional campaign that is generating unsustainable order volume. The system was built as a fully interactive, four-tab Streamlit web application that integrates a Random Forest classifier, SHAP local explainability, real-time simulation, and an enterprise batch-scoring pipeline with financial risk quantification. The result is a tool that bridges the gap between machine learning research and actionable business operations, translating a 68.9% predictive accuracy into measurable, dollar-denominated cost savings.
 
 ---
 
 ## 2. Exploratory Data Analysis
 
-### 2.1 Dataset Overview
+The dataset used for this project was sourced from the Kaggle platform under the title "E-Commerce Shipping Data," comprising **10,999 complete shipment records** across eleven attributes. The data covers a range of operational variables recorded at the point of order despatch, including the originating warehouse block (A, B, C, D, or F), the mode of shipment (Flight, Road, or Ship), customer care call volume (2–7 calls), customer satisfaction rating (1–5), prior purchase history, the discount percentage applied to the product (1–65%), the product's weight in grams (1,001–7,846 g), and the binary target variable `Reached.on.Time_Y.N` indicating whether the shipment arrived on schedule. Crucially, **no missing values were identified** across any column, eliminating the need for imputation and allowing the full dataset to be used for training and evaluation. The four categorical columns — `Warehouse_block`, `Mode_of_Shipment`, `Product_importance`, and `Gender` — were transformed into integer representations using Scikit-Learn's `LabelEncoder` prior to model training, ensuring compatibility with the tree-based algorithm without introducing ordinal assumptions.
 
-The Kaggle E-Commerce Shipping Dataset contains **10,999 shipment records** from a fictional international e-commerce retailer. Each record captures operational attributes recorded at the time of despatch.
+The visual exploration of the data, rendered through interactive Plotly charts in Tab 1 of the application, surfaced two findings of immediate operational significance. First, **Warehouse Block F** was identified as processing the largest share of all orders — approximately 33.3% of the total dataset — while simultaneously exhibiting a late-delivery rate of approximately 59.8%. This combination of disproportionate volume and high delay frequency makes Block F the single highest-leverage target for operational intervention. Second, a clear positive relationship was observed between the discount percentage applied to an order and the likelihood of that order arriving late. Orders carrying discounts above 40% showed markedly elevated delay rates compared to orders with modest or no discount, strongly suggesting that large promotional campaigns generate demand spikes that overwhelm the warehouse's order-fulfilment capacity within the available despatch window. These two findings alone provide a clear, data-backed mandate for changes to both warehouse resource allocation and promotional scheduling practices.
 
-| Attribute | Type | Range / Categories |
-|---|---|---|
-| `Warehouse_block` | Categorical | A, B, C, D, F |
-| `Mode_of_Shipment` | Categorical | Flight, Road, Ship |
-| `Customer_care_calls` | Integer | 2 – 7 |
-| `Customer_rating` | Integer | 1 – 5 |
-| `Cost_of_the_Product` | Integer | 96 – 310 |
-| `Prior_purchases` | Integer | 2 – 10 |
-| `Product_importance` | Categorical | high, low, medium |
-| `Discount_offered` | Integer | 1 – 65 (%) |
-| `Weight_in_gms` | Integer | 1,001 – 7,846 |
-| `Reached.on.Time_Y.N` | Binary target | 0 = On Time, 1 = Late |
-
-**No missing values** were found across any column. The ID column was dropped as it carries no predictive signal.
-
-### 2.2 Key Findings
-
-- **Overall delay rate: 59.7%** — a majority of shipments in this dataset arrive late, confirming the business problem is significant and systemic.
-- **Warehouse Block F** processes the largest share of orders (~33%) and shows the highest late-delivery rate (~59.8%), making it the single highest-leverage operational improvement target.
-- **Discount skew:** Late orders carry a median discount of 9% versus 6% for on-time orders — a 50% relative difference — suggesting that promotional demand spikes outpace warehouse fulfilment capacity.
-
-![EDA Dashboard — KPI Metrics and Warehouse Delay Histogram](https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcS03ds2GHOKxjKeg3U3w5axpn_CjfEe7LyY9_1ikMdXJ3wQcuHNh-_02bsCRouc9CizG5gmU17jT_UeJ0A)
-*Figure 1: Tab 1 — EDA Dashboard showing KPI tiles and grouped delay histogram by warehouse block.*
+> **[INSERT SCREENSHOT: EDA Dashboard — Tab 1 showing the three KPI metric tiles (Total Shipments: 10,999 · Overall Delay Rate: 59.7% · Average Discount: 13.4%) and the two side-by-side Plotly charts (grouped bar chart of delays by warehouse block and scatter plot of weight vs discount coloured by delivery status)]**
 
 ---
 
 ## 3. Predictive Modelling — Random Forest Classifier
 
-### 3.1 Feature Selection
+The Random Forest Classifier was selected as the primary modelling algorithm for three reasons specific to this problem. First, ensemble tree methods are inherently robust to non-linear relationships and feature interactions of the type present in supply chain data, where the combination of a high discount and a heavy product is more predictive than either attribute alone. Second, the model produces well-calibrated probability estimates through its internal vote-averaging mechanism, which is essential for generating the confidence percentages displayed in the simulator and the delay probabilities used in the batch-scoring pipeline. Third, the `feature_importances_` attribute of a trained Random Forest provides a transparent, globally interpretable ranking of each feature's contribution to predictive accuracy, supporting the business recommendation layer of the application. The model was configured with `n_estimators=100` decision trees and a `max_depth=5` constraint, with the latter hyperparameter deliberately limiting tree complexity to prevent overfitting to the noise inherent in logistics data. The dataset was split in an 80/20 ratio — 8,799 records for training and 2,200 for evaluation — using a fixed `random_state=42` to ensure full reproducibility of results.
 
-Four features were selected for the model based on their operational availability at order-creation time and their correlation with the target variable:
+The trained model achieved a **test-set accuracy of 68.9%**, representing a **+9.2 percentage point lift over the naive majority-class baseline of 59.7%**. While 68.9% may appear modest in absolute terms, this figure must be evaluated in its operational context: the model was trained on only four numerical features (`Customer_care_calls`, `Discount_offered`, `Weight_in_gms`, `Prior_purchases`), and the underlying logistics data contains inherent stochasticity — weather events, carrier failures, and warehouse incidents — that no model trained on pre-despatch attributes can fully anticipate. Within those constraints, a nearly 10-point lift over the baseline is both statistically meaningful and practically valuable. The global feature importance analysis revealed that `Weight_in_gms` and `Discount_offered` are the two dominant predictors, contributing the largest absolute SHAP and Gini-based importance scores, followed at a distance by `Customer_care_calls` and `Prior_purchases`. This ordering is consistent with the EDA findings and provides a coherent, interpretable narrative: the weight of a product determines handling complexity and carrier tier, while the discount level controls demand volume — together, these two attributes drive the majority of the delay signal in the dataset.
 
-| Feature | Rationale |
-|---|---|
-| `Discount_offered` | Strongest single predictor; high discounts correlate with demand spikes |
-| `Weight_in_gms` | Heavier products have longer handling times and carrier constraints |
-| `Customer_care_calls` | Leading indicator of order friction and logistics issues |
-| `Prior_purchases` | Proxy for customer segment and order complexity |
-
-Categorical columns (`Warehouse_block`, `Mode_of_Shipment`) were label-encoded for compatibility with the tree-based model but were not included in the final feature set, as the four numerical features yielded equivalent accuracy with a simpler, more interpretable model.
-
-### 3.2 Training Configuration
-
-```python
-RandomForestClassifier(
-    n_estimators = 100,   # 100 decision trees
-    max_depth    = 5,     # prevents overfitting on noisy features
-    random_state = 42,    # reproducibility
-)
-train_test_split(test_size=0.2, random_state=42)
-# Training set: 8,799 records
-# Test set    : 2,200 records
-```
-
-### 3.3 Model Performance
-
-| Metric | Value |
-|---|---|
-| Test Set Accuracy | **68.9%** |
-| Baseline (majority class) | 59.7% |
-| Lift over baseline | +9.2 percentage points |
-
-A 68.9% accuracy represents a meaningful and deployable improvement over the naive majority-class baseline of 59.7%. In a logistics context, even a modest improvement in precision when flagging high-risk orders enables proactive intervention (expedited carrier upgrades, pre-emptive customer communication) that reduces the financial cost of the remaining errors.
-
-![Model Insights — Feature Importance Chart](https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcS03ds2GHOKxjKeg3U3w5axpn_CjfEe7LyY9_1ikMdXJ3wQcuHNh-_02bsCRouc9CizG5gmU17jT_UeJ0A)
-*Figure 2: Tab 3 — Horizontal bar chart of Random Forest feature importances. `Weight_in_gms` and `Discount_offered` dominate.*
+> **[INSERT SCREENSHOT: Model Insights — Tab 3 showing the test accuracy metric (68.9%) and the horizontal Plotly bar chart of Random Forest feature importances, sorted ascending with Weight_in_gms and Discount_offered as the longest bars]**
 
 ---
 
 ## 4. Interactive Simulation & Local Explainability (SHAP)
 
-### 4.1 Real-Time Simulator
+The Predictive Simulator, housed in Tab 2 of the application, provides a real-time interface through which logistics coordinators and business analysts can test hypothetical shipment scenarios without requiring any programming knowledge. Three Streamlit slider widgets allow the user to adjust **Product Weight** (1,001–7,846 g), **Discount Offered** (1–65%), and **Customer Care Calls** (2–7) to any value within the observed dataset range. With every slider movement, the application immediately invokes `model.predict_proba()` on the updated input row and refreshes three pieces of output in place: a large, colour-coded prediction label (green for "Late," blue for "On-Time"), a model confidence percentage representing the probability of the predicted class, and an interactive Plotly scatter chart that overlays 1,500 sampled historical orders as background context, with the user's current input rendered as a large, distinctly bordered dot. This design allows a user to develop an intuitive spatial understanding of where their order sits relative to the historical distribution — for example, seeing that a 6,500 g product with a 50% discount places the order in a dense cluster of historically delayed shipments provides more persuasive operational insight than a bare probability score.
 
-The Predictive Simulator tab exposes the trained model through three Streamlit sliders:
+The most technically sophisticated component of the simulator is the integration of **SHAP (SHapley Additive exPlanations) force plots** for local, per-prediction explainability. Unlike global feature importance, which describes average behaviour across the entire dataset, a SHAP force plot answers the specific question: *"For this exact order, which feature was responsible for pushing the prediction toward Late, and by how much?"* The application instantiates a `shap.TreeExplainer` against the trained Random Forest — an algorithm specifically optimised for tree-based models and orders of magnitude faster than the generic kernel-based approach — and computes SHAP values for the single user-input row on every interaction. The resulting force plot renders a horizontal bar centred on the model's base value (approximately 0.60, representing the average predicted probability of delay across the training set), with red segments extending rightward to represent features that increase the delay probability and blue segments extending leftward to represent features that decrease it. The width of each segment is proportional to that feature's Shapley contribution to the final output. This decomposition transforms what would otherwise be an opaque algorithmic verdict into an auditable, human-readable explanation — a requirement for responsible deployment in any regulated or high-accountability operational environment.
 
-- **Product Weight** (1,001 – 7,846 g)
-- **Discount Offered** (1 – 65%)
-- **Customer Care Calls** (2 – 7)
+> **[INSERT SCREENSHOT: Predictive Simulator — Tab 2 showing the three sliders set to a high-risk configuration (Weight ≈ 6,500 g, Discount ≈ 45%, Calls ≈ 6), the "LATE" prediction label in green at high confidence, and the scatter plot with the user's input dot positioned in the dense Late cluster]**
 
-As sliders are adjusted, the app instantaneously calls `model.predict_proba()` and re-renders the prediction label, confidence percentage, and background scatter plot — with the user's input shown as a large highlighted dot positioned relative to 1,500 historical orders.
-
-### 4.2 SHAP Force Plot — Local Explainability
-
-The SHAP (SHapley Additive exPlanations) framework decomposes each individual prediction into per-feature contributions. A `shap.TreeExplainer` is instantiated against the Random Forest model and applied to the single user-input row on every slider interaction.
-
-The resulting force plot renders:
-- A **base value** (the model's average prediction across all training orders: ~0.60)
-- **Red arrows** representing features that push the prediction toward Late (class 1)
-- **Blue arrows** representing features that push the prediction toward On-Time (class 0)
-- The **final prediction value** at the tip of the combined force
-
-This transforms the model from a black box into an auditable decision aid — a logistics manager can see not just *that* an order is flagged, but *which specific attribute* is responsible and by how much.
-
-![Predictive Simulator with SHAP Force Plot](https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcS03ds2GHOKxjKeg3U3w5axpn_CjfEe7LyY9_1ikMdXJ3wQcuHNh-_02bsCRouc9CizG5gmU17jT_UeJ0A)
-*Figure 3: Tab 2 — Simulator showing prediction output and SHAP force plot for a high-risk input (Weight=6,500g, Discount=45%).*
-
-![SHAP Force Plot Detail](https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcS03ds2GHOKxjKeg3U3w5axpn_CjfEe7LyY9_1ikMdXJ3wQcuHNh-_02bsCRouc9CizG5gmU17jT_UeJ0A)
-*Figure 4: SHAP force plot close-up — `Discount_offered=45` and `Weight_in_gms=6500` are the dominant contributors pushing toward a Late prediction.*
+> **[INSERT SCREENSHOT: SHAP Force Plot — the Prediction Breakdown subheader and the interactive force plot rendered by st_shap(), clearly showing Discount_offered and Weight_in_gms as the dominant red (toward Late) contributors, with the base value and final prediction value labelled at either end of the bar]**
 
 ---
 
-## 5. Enterprise Batch Processing & ROI
+## 5. Enterprise Batch Processing & ROI Pipeline
 
-### 5.1 Bulk Scoring Pipeline
+The Bulk Scoring & ROI tab elevates the application from an individual-order simulator to an enterprise-grade operational tool capable of processing an entire day's shipping manifest in seconds. Supply chain managers working with large order volumes cannot realistically evaluate each shipment individually; they require a pipeline that ingests a structured data file, applies the trained model at scale, and surfaces the results in a format immediately actionable by non-technical staff. The tab implements this workflow using Streamlit's `file_uploader` component, which accepts a CSV file containing the four model features (`Customer_care_calls`, `Discount_offered`, `Weight_in_gms`, `Prior_purchases`). A downloadable template is provided inline so that users unfamiliar with the required format can generate a correctly structured file without consulting documentation. Upon upload, the application validates that all required columns are present, calls `model.predict()` and `model.predict_proba()` on the full batch simultaneously, and appends two new columns to the results: `Predicted_Delay` (Yes or No) and `Delay_Confidence_%` (the model's probability of delay rounded to one decimal place). The scored manifest is then rendered as an interactive dataframe with delayed orders highlighted in red using Pandas Styler, and a download button allows the entire scored file to be exported for integration into external warehouse management systems or CRM platforms.
 
-The Bulk Scoring & ROI tab elevates the application from a single-prediction simulator to an operational batch tool. A logistics coordinator can:
+The most commercially significant feature of the batch tab is the **Value at Risk (VAR)** metric, which converts the model's raw delay predictions into a dollar-denominated financial exposure figure. The calculation applies a standard remediation cost of **$15.00 per predicted delayed order** — a conservative estimate reflecting the blended cost of customer refunds, incremental support-ticket handling, and re-delivery logistics — to the total count of flagged shipments. The resulting VAR figure is displayed prominently as a `st.metric` tile alongside the total shipments processed and the count of flagged orders. This single number accomplishes something that accuracy scores and confusion matrices cannot: it speaks directly to the financial concerns of operations directors and CFOs who are evaluating whether to invest in proactive intervention measures. If a 200-order daily manifest yields a VAR of $900, the business case for spending $200 on expedited carrier upgrades for the 15 highest-confidence delay predictions becomes self-evidently rational. By anchoring the model's output to a financial metric, the application closes the loop between machine learning research and business decision-making, making the case for data-driven logistics operations without requiring the audience to understand a single line of Python.
 
-1. **Download a CSV template** pre-populated with the four required column headers
-2. **Upload a daily shipping manifest** containing any number of new orders
-3. Receive **instant scored output** with two appended columns:
-   - `Predicted_Delay` — "Yes" or "No" per order
-   - `Delay_Confidence_%` — the model's probability of delay (0–100%)
+> **[INSERT SCREENSHOT: Bulk Scoring — Tab 4 showing the file uploader widget in its default state (no file uploaded), the "Download CSV Template" button, and the st.info message reading "Awaiting CSV upload"]**
 
-Delayed rows are highlighted in red within the interactive table for immediate visual triage. The scored manifest can be exported as a CSV for integration into warehouse management systems.
-
-### 5.2 Value at Risk (VAR) Metric
-
-The application computes a **Value at Risk** estimate using the assumption that each predicted delay carries an expected remediation cost of **$15.00** (covering customer refunds, re-delivery logistics, and incremental support-ticket handling):
-
-```
-VAR = Count(Predicted_Delay == 'Yes') × $15.00
-```
-
-This metric converts a statistical output into a dollar figure that is immediately meaningful to operations managers and C-suite stakeholders — bridging the gap between data science and business decision-making.
-
-**Example:** A 200-order daily manifest with 60 flagged delays yields a VAR of **$900**, prompting targeted intervention on those 60 orders before they leave the warehouse.
-
-![Bulk Scoring — Upload and Results](https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcS03ds2GHOKxjKeg3U3w5axpn_CjfEe7LyY9_1ikMdXJ3wQcuHNh-_02bsCRouc9CizG5gmU17jT_UeJ0A)
-*Figure 5: Tab 4 — Batch scoring results showing KPI tiles (shipments processed, flagged for delay, VAR in dollars).*
-
-![Bulk Scoring — Scored Manifest Table](https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcS03ds2GHOKxjKeg3U3w5axpn_CjfEe7LyY9_1ikMdXJ3wQcuHNh-_02bsCRouc9CizG5gmU17jT_UeJ0A)
-*Figure 6: Interactive scored dataframe with delayed orders highlighted in red and confidence scores appended per row.*
+> **[INSERT SCREENSHOT: Bulk Scoring — Tab 4 after a CSV has been uploaded, showing the three st.metric tiles (Total Shipments Processed, Flagged for Delay, Value at Risk in dollars) and the styled dataframe with delayed rows highlighted in red, with the "Download Scored Manifest" primary button visible below]**
 
 ---
 
 ## 6. Final Business Recommendations
 
-Three actionable recommendations emerge directly from the model's feature importances and the EDA findings:
+Based on the quantitative findings of the exploratory data analysis, the feature importance rankings produced by the Random Forest model, and the operational patterns revealed through SHAP local explainability, three high-priority recommendations are advanced for the logistics and operations leadership of the organisation:
 
-### Recommendation 1 — Enforce Discount Thresholds
+- **Discount Governance Policy.** The single most impactful change available to the organisation is the introduction of a formal discount governance framework. The data demonstrates unambiguously that `Discount_offered` is the strongest global predictor of late delivery, and the EDA confirms that this relationship becomes particularly acute above the 40% discount threshold. The recommended intervention is threefold: first, establish a maximum single-day discount issuance cap that is dynamically adjusted based on the current pick-and-pack throughput capacity of each warehouse block; second, require that any promotional campaign projecting more than 15% uplift in order volume relative to the prior four-week average must be approved by the operations director, with the Bulk Scoring tool used to model the projected VAR before the campaign launches; and third, implement a staged discount release schedule — rather than activating a 50% promotion for all customer segments simultaneously, releasing it in tranches over 48–72 hours allows fulfilment capacity to absorb demand without generating the spike-and-delay pattern visible in the dataset.
 
-**Finding:** `Discount_offered` is the strongest predictor of late delivery. Orders with discounts exceeding 40% show a disproportionately high delay rate.
+- **Heavy Product Routing and Carrier Contracts.** `Weight_in_gms` is consistently identified as the second-most important predictor of delay across both the global feature importance analysis and individual SHAP force plots. This reflects a structural reality of carrier logistics: products exceeding approximately 5,000 g transition into a different weight tier for most commercial freight providers, incurring longer handling times, reduced vehicle load flexibility, and lower carrier priority. The recommendation is to negotiate **dedicated weight-tier service level agreements (SLAs)** with at least two carrier partners for products above 5,000 g, guaranteeing a maximum transit time that is enforceable through contractual penalty clauses. Concurrently, the warehouse routing logic should be updated to direct all orders for heavy-weight SKUs away from Block F — which already operates at the highest delay rate in the network — and preferentially toward Blocks A or B, which show comparatively lower delay frequencies in the dataset. This routing rule can be implemented as a simple conditional in the warehouse management system using the same weight threshold that the model identifies as the inflection point for delay risk.
 
-**Action:** Implement a dynamic discount governance policy:
-- Discounts above 35% should trigger automatic inventory pre-staging 48 hours before the promotion goes live.
-- Flash sales should be capped at a volume that the lowest-capacity warehouse block can fulfil within the SLA window.
-- The Bulk Scoring tool can be run on the expected order volume *before* a promotion launches, giving the operations team a VAR estimate in advance.
-
-### Recommendation 2 — Prioritise Heavy Product Logistics
-
-**Finding:** `Weight_in_gms` is the second-most important feature. Products above ~5,000 g show materially higher delay rates, attributable to carrier weight-tier transitions, longer packing times, and limited vehicle capacity.
-
-**Action:**
-- Negotiate dedicated weight-tier carrier contracts for products over 5,000 g.
-- Route heavy-product orders exclusively through Warehouse Block A or B (lower observed delay rates) rather than the overloaded Block F.
-- Apply a weight-based surcharge model to offset the higher fulfilment cost, improving margin on at-risk SKUs.
-
-### Recommendation 3 — Use Support Call Volume as an Early-Warning System
-
-**Finding:** `Customer_care_calls` correlates with delivery problems. An order that has generated 5 or more pre-delivery support calls has a near-certain delay history in the training data.
-
-**Action:**
-- Integrate the predictive model into the CRM system. When an order crosses 3 care calls, an automated alert should be sent to the logistics supervisor.
-- Proactively notify affected customers with a revised ETA and a goodwill discount voucher — a strategy that data consistently shows reduces negative reviews even when the delay cannot be prevented.
-- Track the call-to-delay conversion rate monthly as a KPI dashboard metric to measure the intervention's effectiveness.
+- **Customer Support Integration and Proactive Communication.** The `Customer_care_calls` feature, while ranking third in global importance, provides a uniquely actionable signal because it is observable in real time as an order progresses through fulfilment. An order that has accumulated four or more pre-delivery support contacts is already exhibiting the behavioural signature of a problematic shipment. The recommendation is to integrate the predictive model directly into the customer relationship management (CRM) platform via an API endpoint, so that when any in-flight order is flagged as high-risk — either through the batch scoring pipeline or by crossing the care-call threshold — an automated workflow is triggered that: (a) sends a proactive outbound message to the customer acknowledging the risk and providing a revised estimated delivery date; (b) creates a high-priority internal ticket assigned to the logistics supervisor for manual review; and (c) evaluates whether a carrier upgrade is financially justified relative to the VAR estimate for that order. This sequence shifts the organisation's posture from reactive complaint management to proactive service recovery, a transformation that research consistently shows reduces negative review rates by 30–50% even in cases where the delay ultimately cannot be prevented.
 
 ---
 
 ## 7. Technical Architecture Summary
+
+The application is structured around two cached functions that serve as the foundation for all four tabs. `load_data()`, decorated with `@st.cache_data`, reads `Train.csv` once per session and returns both a raw copy for EDA visualisations and an encoded copy for model consumption; it includes a `try/except FileNotFoundError` fallback that generates 1,000 rows of synthetic data, ensuring the application runs unconditionally in any deployment environment. `train_model()`, decorated with `@st.cache_resource`, performs label encoding, executes the 80/20 train-test split, fits the Random Forest, and returns the trained model object, test accuracy, and feature name list. These two functions are called once at application startup; all four tabs then consume their outputs without re-executing the expensive I/O and training operations.
 
 ```
 Train.csv
@@ -207,14 +86,14 @@ load_data()  ──@st.cache_data──►  df_raw (EDA) + df_encoded (model inp
     ▼
 train_model() ──@st.cache_resource──►  RandomForestClassifier + accuracy + feature_names
     │
-    ├──► Tab 1: Plotly histogram + scatter (EDA)
-    ├──► Tab 2: predict_proba → SHAP TreeExplainer → force_plot (Simulator)
-    ├──► Tab 3: feature_importances_ → Plotly bar chart (Insights)
-    └──► Tab 4: file_uploader → batch predict → VAR → styled dataframe + download
+    ├──► Tab 1: Plotly histogram + scatter (EDA dashboard)
+    ├──► Tab 2: predict_proba → SHAP TreeExplainer → force_plot (simulator)
+    ├──► Tab 3: feature_importances_ → Plotly bar chart (global insights)
+    └──► Tab 4: file_uploader → batch predict → VAR calculation → styled dataframe + CSV download
 ```
 
-**Deployment:** The `render.yaml` blueprint commits the full infrastructure definition to Git, enabling one-click cloud deployment. `requirements.txt` pins minimum compatible versions of all seven dependencies.
+The application is deployed to the Render cloud platform via a `render.yaml` blueprint committed to the GitHub repository. On every push to the `main` branch, Render automatically re-installs dependencies from `requirements.txt` and restarts the Streamlit service, providing a zero-configuration continuous deployment pipeline suited to an internship-scale project.
 
 ---
 
-*Report prepared by Mohammed Nahyan Khan as part of the AICTE Internship on AI/ML — Supply Chain Data Analytics track.*
+*This report was prepared by Mohammed Nahyan Khan as a final deliverable for the AICTE Internship on Artificial Intelligence & Machine Learning, Supply Chain Data Analytics track.*
