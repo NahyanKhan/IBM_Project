@@ -2,8 +2,6 @@
 
 > **An end-to-end machine learning web application** that predicts e-commerce shipment delays in real time, explains individual predictions with SHAP force plots, and quantifies financial exposure through an enterprise-grade bulk-scoring pipeline.  
 > Built as part of the **AICTE Internship on IBM SkillsBuild Data Analytics with AI Academic Internship Program** by **Mohammed Nahyan Khan**.
-
-
 ---
 
 ## 📂 Dataset
