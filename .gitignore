@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv
+venv/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Generated chart images (reproducible from notebook)
+boxplot_discount.png
+countplot_care_calls.png
+heatmap_correlation.png
+piechart_warehouse.png
