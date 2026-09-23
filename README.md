@@ -1,7 +1,7 @@
 # 📦 Supply Chain Delivery Prediction & Analytics
 
 > **An end-to-end machine learning web application** that predicts e-commerce shipment delays in real time, explains individual predictions with SHAP force plots, and quantifies financial exposure through an enterprise-grade bulk-scoring pipeline.  
-> Built as part of the **AICTE Internship on AI/ML** by **Mohammed Nahyan Khan**.
+> Built as part of the **AICTE Internship on IBM SkillsBuild Data Analytics with AI Academic Internship Program** by **Mohammed Nahyan Khan**.
 
 
 ---
@@ -102,4 +102,4 @@ The app will open automatically at `http://localhost:8501`.
 ## 👤 Author
 
 **Mohammed Nahyan Khan**  
-AICTE Internship on AI/ML — Supply Chain Data Analytics  
+AICTE Internship on IBM SkillsBuild Data Analytics with AI Academic Internship Program — Supply Chain Data Analytics  
